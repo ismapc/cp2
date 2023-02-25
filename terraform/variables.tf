@@ -3,13 +3,24 @@ variable "resource_group_name" {
 }
 
 variable "location_name" {
-  default = "uksouth"
+  default = "EastUS2"
 }
 
 variable "network_name" {
-  default = "vnet1"
+  default = "cp2-vnet"
 }
 
 variable "subnet_name" {
-  default = "subnet1"
+  default = "cp2-subnet1"
+}
+
+variable "public_ip" {
+  default = "cp2-pubip"
+}
+variable "vm_nic" {
+  default = "cp2-nic"
+}
+
+variable "vm_name" {
+  default = "cp2-webserver"
 }
