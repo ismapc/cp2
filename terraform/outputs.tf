@@ -1,9 +1,9 @@
 output "resource_group_id" {
-  value = azurerm_resource_group.rg.id
+  value = azurerm_resource_group.cp2-rg.id
 }
 
 output "webser_id" {
-  value = azurerm_virtual_machine.cp2-webserver.id
+  value = azurerm_linux_virtual_machine.cp2-webserver.id
 }
 
 output "public_ip_address" {
@@ -47,8 +47,3 @@ output "kube_config" {
   sensitive = true
 }
 
-resource "local_file" "kubeconfig" {
-  depends_on   = [azurerm_kubernetes_cluster.cp2-kubernetes-cluster]
-  filename     = "kube.conf"
-  content      = azurerm_kubernetes_cluster.cp2-kubernetes-cluster.kube_config_raw
-}

@@ -1,8 +1,8 @@
 resource "azurerm_kubernetes_cluster" "cp2-kubernetes-cluster" {
   name                = var.aks_cluster_name
   kubernetes_version  = var.aks_kubernetes_version
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.cp2-rg.location
+  resource_group_name = azurerm_resource_group.cp2-rg.name
   dns_prefix          = var.aks_cluster_name
 
   default_node_pool {
@@ -16,4 +16,10 @@ resource "azurerm_kubernetes_cluster" "cp2-kubernetes-cluster" {
   identity {
     type = "SystemAssigned"
   }
+}
+
+resource "local_file" "kubeconfig" {
+  depends_on   = [azurerm_kubernetes_cluster.cp2-kubernetes-cluster]
+  filename     = var.aks_kubeconfig_path
+  content      = azurerm_kubernetes_cluster.cp2-kubernetes-cluster.kube_config_raw
 }

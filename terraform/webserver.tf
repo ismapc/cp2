@@ -1,64 +1,32 @@
-resource "azurerm_public_ip" "cp2-public-ip" {
-  name                = var.public_ip
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Static"
-}
-
-
-resource "azurerm_network_interface" "cp2-nic" {
-  name                = var.vm_nic
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-
-  ip_configuration {
-    name                          = "cp2-nic-ip"
-    subnet_id                     = azurerm_subnet.cp2-subnet.id
-    private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.cp2-public-ip.id
-  }
-}
-
-
-resource "azurerm_virtual_machine" "cp2-webserver" {
+resource "azurerm_linux_virtual_machine" "cp2-webserver" {
   name                  = var.vm_name
-  location              = azurerm_resource_group.rg.location
-  resource_group_name   = azurerm_resource_group.rg.name
-  network_interface_ids = [azurerm_network_interface.cp2-nic.id]
-  vm_size               = var.vm_type
+  location              = azurerm_resource_group.cp2-rg.location
+  resource_group_name   = azurerm_resource_group.cp2-rg.name
+  size                  = var.vm_size
+  admin_username        = var.vm_user
+  network_interface_ids = [azurerm_network_interface.cp2-nic.id,]
 
-  storage_image_reference {
-    publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "18.04-LTS"
-    version   = "latest"
+  admin_ssh_key {
+    username   = var.vm_user
+    public_key = file(var.public_key_path)
   }
 
-  storage_os_disk {
-    name              = "cp2-webserver-os-disk"
-    caching           = "ReadWrite"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
   }
 
-  os_profile {
-    computer_name  = "cp2-webserver-vm"
-    admin_username = "uniruser"
-    #admin_password = "Web-server!00"
+  plan {
+    name      = "centos-8-stream-free"
+    product   = "centos-8-stream-free"
+    publisher = "cognosys"
   }
 
-  os_profile_linux_config {
-    disable_password_authentication = true
-    #ssh-keygen -t rsa -b 4096 -C "web_server_key" -f ~/.ssh/web_server_key
-    ssh_keys {
-      #TODO: pasar a variables
-      key_data = file("~/.ssh/web_server_key.pub")
-      path     = "/home/uniruser/.ssh/authorized_keys"
-    }  
-    #To open a shell in the new machine
-    #ssh -i ~/.ssh/web_server_key uniruser@<public-ip-address>  
+  source_image_reference {
+    publisher = "cognosys"
+    offer     = "centos-8-stream-free"
+    sku       = "centos-8-stream-free"
+    version   = "22.03.28"
   }
-
-  #This parameter must set true to remove the disk when the machine is revomed
-  delete_os_disk_on_termination = true
+   #ssh -i var.public_key_path var.ssh_user@<public-ip-address>  
 }
