@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: azure-managed-disk
+  namespace: "{{ aks.namespace }}"
+spec:
+  storageClassName: default
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: "{{ aks.storage }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ aks.name }}"
+  namespace: "{{ aks.namespace }}"
+spec:
+  type: LoadBalancer
+  ports:
+    - port: {{ aks.port }}
+      targetPort: {{ aks.port }}
+  selector:
+    app: "{{ aks.name }}"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "{{ aks.name }}"
+  namespace: "{{ aks.namespace }}"
+spec:
+  replicas: {{ aks.replicas }}
+  serviceName: "{{ aks.name }}"
+  selector:
+    matchLabels:
+      app: "{{ aks.name }}"
+  template:
+    metadata:
+      labels:
+        app: "{{ aks.name }}"
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      securityContext:
+        fsGroup: 1001
+      containers:
+      - name: "{{ aks.name }}"
+        image: "{{ aks.imagen }}"
+        env:
+        - name: MONGODB_ROOT_USER
+          value: "{{ aks.root_user }}"
+        - name: MONGODB_ROOT_PASSWORD
+          value: "{{ aks.root_password }}"
+        - name: MONGODB_DATABASE
+          value: "{{ aks.database_name }}"
+        resources:
+          requests:
+            cpu: "{{ aks.requests.cpu }}"
+            memory: "{{ aks.requests.memoria }}"
+          limits:
+            cpu: "{{ aks.limits.cpu }}"
+            memory: "{{ aks.limits.memoria }}"
+        ports:
+        - containerPort: {{ aks.port }}
+          name: "{{ aks.name }}"
+        volumeMounts:
+          - name: volume
+            mountPath: "{{ aks.mount_path }}"
+      volumes:
+        - name: volume
+          persistentVolumeClaim:
+            claimName: azure-managed-disk

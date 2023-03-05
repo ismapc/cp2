@@ -1,0 +1,36 @@
+webserver:
+  workspace: "./webserver"
+  username: isma
+  password: "pwd"
+  imagen: "{{ acr }}/webserver:casopractico2"
+  container_name: apache
+
+ssl:
+  country_name: ES
+  state_or_province_name: GU
+  locality_name: GU
+  organization_name: ExpertCourse
+  organizational_unit_name: CP2
+  common_name: webserver
+
+aks:
+  kubeconfig: "./aks/kubeconfig"
+  namespace: "cp2"
+  resource: "statefulset.yaml"
+  workspace: "/tmp"
+  name: mongodb 
+  imagen_orig: docker.io/bitnami/mongodb:latest
+  imagen: "{{ acr }}/mongodb:casopractico2"
+  root_user: admin
+  root_password: admin1234
+  database_name: my_database
+  mount_path: /bitnami/mongodb
+  replicas: 1
+  requests:
+    cpu: 250m
+    memoria: 256Mi
+  limits:
+    cpu: 500m
+    memoria: 512Mi
+  storage: 10Gi  
+  port: 27017

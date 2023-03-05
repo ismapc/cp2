@@ -6,23 +6,27 @@ output "webser_id" {
   value = azurerm_linux_virtual_machine.cp2-webserver.id
 }
 
+output "webserver_username" {
+  value = azurerm_linux_virtual_machine.cp2-webserver.admin_username
+}
+
 output "public_ip_address" {
   value = azurerm_public_ip.cp2-public-ip.ip_address
 }
 
-output "acs_id" {
+output "acr_id" {
   value = azurerm_container_registry.cp2-registry.id
 }
 
-output "acs_login_server" {
+output "acr_login_server" {
   value = azurerm_container_registry.cp2-registry.login_server
 }
 
-output "acs_username" {
+output "acr_username" {
   value = azurerm_container_registry.cp2-registry.admin_username
 }
 
-output "acs_password" {
+output "acr_password" {
   value = azurerm_container_registry.cp2-registry.admin_password
   sensitive = true
 }
@@ -42,7 +46,7 @@ output "aks_node_rg" {
   value = azurerm_kubernetes_cluster.cp2-kubernetes-cluster.node_resource_group
 }
 
-output "kube_config" {
+output "kubeconfig" {
   value = azurerm_kubernetes_cluster.cp2-kubernetes-cluster.kube_config_raw
   sensitive = true
 }

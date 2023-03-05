@@ -1,0 +1,60 @@
+# Playbook 2 
+---
+- name: 'Caso práctico 2 (2/2): Desplegar MongoDB en AKS. Primero sube imagen a a ACR y despues se depliega en AKS'
+  hosts: webserver
+  vars_files:
+    - vars/terraform.yml
+    - vars/vars.yml
+  remote_user: "{{vm_user}}"
+  become: true
+  tasks:
+    - name: 'Paso 1: Descargar imagen de MongoDB'
+      containers.podman.podman_image:
+        name: "{{ aks.imagen_orig }}"
+
+    - name: 'Paso 2: Reetiquetar la imagen'
+      containers.podman.podman_tag:
+        image: "{{ aks.imagen_orig }}"
+        target_names:
+          - "{{ aks.imagen }}"
+
+    - name: 'Paso 3: Login en el ACR'
+      containers.podman.podman_login:
+        username: "{{ acr_user }}"
+        password: "{{ acr_password }}"
+        registry: "{{ acr }}"
+
+    - name: 'Paso 4: Push de la imagen reetiquetada'
+      containers.podman.podman_image:
+        name: "{{ aks.imagen }}"
+        push: yes
+        push_args:
+          dest: "{{ aks.imagen }}"
+
+    - name: 'Paso 5: Definir los objectos statefulset, servicios, y pvc'
+      template:
+        src: templates/statefulset.j2
+        dest: "{{ aks.workspace }}/{{ aks.resource }}"
+    
+    - name: 'Paso 6: Instalar el modulo python kubernetes'
+      ansible.builtin.pip:
+        name: kubernetes
+
+    - name: 'Paso 7: Copiar kubeconfig'
+      ansible.builtin.copy:
+        src: "{{ aks.kubeconfig }}"
+        dest: "{{ aks.workspace }}/kubeconfig"
+
+    - name: 'Paso 8: Definir namespace de trabajo en AKS'
+      kubernetes.core.k8s:
+        kubeconfig: "{{ aks.workspace }}/kubeconfig"
+        context: "{{ aks_cluster }}"
+        kind: Namespace
+        name: "{{ aks.namespace }}"
+
+    - name: 'Paso 9: Despliegue en AKS'
+      kubernetes.core.k8s:
+        kubeconfig: "{{ aks.workspace }}/kubeconfig"
+        context: "{{ aks_cluster }}"
+        state: present
+        template: "{{ aks.workspace }}/{{ aks.resource }}"          

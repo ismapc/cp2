@@ -1,0 +1,147 @@
+# Playbook 1 
+---
+- name: 'Caso práctico 2 (1/2): Webserver - apache contenerizado (podman) ejecutado como servicio (systemd), https, usuario/password'
+  hosts: webserver
+  vars_files:
+    - vars/terraform.yml
+    - vars/vars.yml
+  remote_user: "{{vm_user}}"
+  tasks:
+    - name: 'Paso 1: Instalar podman, httpd-tools, openssl'
+      become: true
+      become_user: root
+      become_method: sudo
+      ansible.builtin.dnf:
+        name: 
+          - podman
+          - httpd-tools
+          - openssl
+        state: latest
+
+    - name: 'Paso 2: Crear directorio de trabajo'
+      ansible.builtin.file:
+        path: "{{ webserver.workspace }}"
+        state: directory
+
+    - name: 'Paso 2: Instalar python passlib'
+      become: true
+      become_user: root
+      become_method: sudo
+      ansible.builtin.pip:
+        name: passlib
+
+    - name: 'Paso 3: Fichero de credenciales para Apache.'
+      community.general.htpasswd:
+        path: "{{ webserver.workspace }}/.creds"
+        name: "{{ webserver.username }}"
+        password: "{{ webserver.password }}"
+
+    - name: 'Paso 4: Generar clave privada para el certificado  RSA-2048 bits'
+      community.crypto.openssl_privatekey:
+        path: "{{ webserver.workspace }}/localhost.key"
+        size: 2048
+
+    - name: 'Paso 5: Firma de certificado'
+      community.crypto.openssl_csr:
+        path: "{{ webserver.workspace }}/localhost.csr"
+        privatekey_path: "{{ webserver.workspace }}/localhost.key"
+        country_name: "{{ ssl.country_name }}"
+        state_or_province_name: "{{ ssl.state_or_province_name }}"
+        locality_name: "{{ ssl.locality_name }}"
+        organization_name: "{{ ssl.organization_name }}"
+        organizational_unit_name: "{{ ssl.organizational_unit_name }}"
+        common_name: "{{ ssl.common_name }}"
+
+    - name: 'Paso 6: Crear certificado (clave privada + firma)'
+      community.crypto.x509_certificate:
+        path: "{{ webserver.workspace }}/localhost.crt"
+        privatekey_path: "{{ webserver.workspace }}/localhost.key"
+        csr_path: "{{ webserver.workspace }}/localhost.csr"
+        provider: selfsigned
+
+    - name: 'Paso 7: Copiar landingpage, ficheros de cofiguracion apache, usuarios y creacion de la imagen '
+      ansible.builtin.copy:
+        src: ./webserver_files/
+        dest: "{{ webserver.workspace }}/"
+
+    - name: 'Paso 8: Crear imagen del contenedor Apache'
+      become: true
+      become_user: root
+      become_method: sudo
+      containers.podman.podman_image:
+        name: webserver
+        path: "{{ webserver.workspace }}"
+
+    - name: 'Paso 9: Etiquetar imagen'
+      become: true
+      become_user: root
+      become_method: sudo
+      containers.podman.podman_tag:
+        image: localhost/webserver:latest
+        target_names:
+          - "{{ webserver.imagen }}"
+
+    - name: 'Paso 10: Login en Container Registry de Azure'
+      become: true
+      become_user: root
+      become_method: sudo
+      containers.podman.podman_login:
+        username: "{{ acr_user }}"
+        password: "{{ acr_password }}"
+        registry: "{{ acr }}"
+
+    - name: 'Paso 11: Push de la imagen al Container Registry de Azure'
+      become: true
+      become_user: root
+      become_method: sudo
+      containers.podman.podman_image:
+        name: "{{ webserver.imagen }}"
+        push: yes
+        push_args:
+          dest: "{{ webserver.imagen }}"
+
+    - name: 'Paso 12: Contenedor del webserver usuando el Container Registry'
+      become: true
+      become_user: root
+      become_method: sudo
+      containers.podman.podman_container:
+        name: "{{ webserver.container_name }}"
+        image: "{{ webserver.imagen }}"
+        state: created
+        ports:
+          - "8080:443"
+
+    - name: 'Paso 13: Crear ficheros de definicion el servicio con el  contenedor a través de systemd'
+      become: true
+      become_user: root
+      become_method: sudo
+      containers.podman.podman_generate_systemd:
+          name: "{{ webserver.container_name }}"
+          new: true
+          dest: "{{ webserver.workspace }}"
+
+    - name: 'Paso 14: Copiar ficheros al directorio de systemd'
+      become: true
+      become_user: root
+      become_method: sudo
+      ansible.builtin.copy:
+        remote_src: true
+        src: "{{ webserver.workspace }}/container-{{ webserver.container_name }}.service"
+        dest: "/etc/systemd/system/container-{{ webserver.container_name }}.service"
+
+    - name: 'Paso 15: Recargar configuración de systemd'
+      become: true
+      become_user: root
+      become_method: sudo
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: 'Paso 16: Iniciar el webserver con systemd'
+      become: true
+      become_user: root
+      become_method: sudo
+      ansible.builtin.systemd:
+        name: "container-{{ webserver.container_name }}.service"
+        enabled: true
+        state: started
+

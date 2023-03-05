@@ -1,80 +1,81 @@
 variable "resource_group_name" {
   type        = string
-  description = "Name of Resources Group"
+  description = "Nombre del grupo de recursos"
 }
 
 variable "location_name" {
   type        = string
-  description = "Name of the resources Location"
+  description = "Localizacion de los recursos"
 }
 
 variable "network_name" {
   type        = string
-  description = "Name of Network"
+  description = "Nombre de la red"
 }
 
 variable "subnet_name" {
   type        = string
-  description = "Name of Subnet"
+  description = "Nombre de la subred"
 }
 
 variable "public_ip" {
   type        = string
-  description = "Name of public IP"
+  description = "Nombre de la IP pública"
 }
 
 variable "vm_nic" {
   type        = string
-  description = "Name of Network Interface"
+  description = "Nombre de la interfaz de red"
 }
 
 variable "vm_name" {
   type        = string
-  description = "Name of webserver VM"
+  description = "Nombre de la máquina virtual de webserver"
 }
 
 variable "vm_user" {
   type        = string
-  description = "Admin and user webserver"
+  description = "Nombre administrador y usuario de webserver"
 }
 
 variable "vm_size" {
   type = string
-  description = "Virtual machine type/size"
+  description = "Tipo/tamaño de la máquina virtual webserver"
 }
 
 variable "public_key_path" {
   type = string
+  description = "Path a la clave pueblica de acceso al webserver"
 }
 
 variable "container_registry" {
   type        = string
-  description = "Name of Container Registry Server"
+  description = "Nombre del servidor de registro de contenedores"
 }
 
  variable "aks_cluster_name" {
   type        = string
-  description = "Name of AKS cluster"
+  description = "Nombre del cluster AKS"
  }
 
 variable "aks_kubernetes_version" {
   type        = string
-  description = "Kubernetes version"
+  description = "Versión de Kubernetes"
   }
 
 variable "aks_workers_count" {
   type        = number
-  description = "Number of AKS worker nodes"
+  description = "Número de workers del cluster AKS"
 }
 
 variable "aks_workers_type" {
   type        = string
-  description = "Type of AKS worker nodes"
+  description = "Tipo/tamaño de workers del cluster AKS"
 }
 
 variable "aks_kubeconfig_path" {
   type        = string
-  description = "ASK Kubeconfig path"
+  description = "kubeconfig con el acceso al cluster de AKS"
 }
 
 
