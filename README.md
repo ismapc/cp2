@@ -4,7 +4,9 @@
 ### Despliegue en Azure con Terraform
 
 1º Máquina virtual 
+
 2º Container Registry
+
 3º Cluster AKS
 
 ### Despliegue con Ansible
